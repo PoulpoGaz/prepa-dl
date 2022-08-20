@@ -4,19 +4,19 @@ import fr.poulpogaz.prepadl.PrepaDLException;
 import fr.poulpogaz.prepadl.anthonylick.ALEntry;
 import fr.poulpogaz.prepadl.anthonylick.ALIterator;
 import fr.poulpogaz.prepadl.anthonylick.ALSession;
-import fr.poulpogaz.prepadl.utils.Input;
 import fr.poulpogaz.prepadl.utils.NamedUrl;
 import fr.poulpogaz.prepadl.utils.Utils;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class DownloadAL extends DownloadCommand {
@@ -37,33 +37,26 @@ public class DownloadAL extends DownloadCommand {
     }
 
     @Override
-    public void downloadImpl() throws IOException, PrepaDLException {
-        try {
-            ALSession session = login();
-            ALIterator iterator = new ALIterator(session, "https://anthonylick.com/mp2i/");
+    public void downloadImpl() throws IOException, PrepaDLException, InterruptedException {
+        ALSession session = login();
+        ALIterator iterator = new ALIterator(session, "https://anthonylick.com/mp2i/");
 
-            ALEntry last = null;
+        ALEntry last = null;
 
-            while (iterator.hasNext()) {
-                ALEntry next = iterator.next();
+        while (iterator.hasNext()) {
+            ALEntry next = iterator.next();
 
-                Path dir = out.resolve(next.group());
+            Path dir = out.resolve(next.group());
 
-                if (last == null || !last.group().equals(next.group())) {
-                    if (!Files.exists(dir)) {
-                        Files.createDirectories(dir);
-                    }
+            if (last == null || !last.group().equals(next.group())) {
+                if (!Files.exists(dir)) {
+                    Files.createDirectories(dir);
                 }
-
-                download(next, dir);
-
-                last = next;
             }
 
+            download(next, dir);
 
-
-        } catch (InterruptedException e) {
-            throw new IOException(e);
+            last = next;
         }
     }
 
@@ -80,11 +73,18 @@ public class DownloadAL extends DownloadCommand {
         return session;
     }
 
-    private void download(ALEntry entry, Path dir) throws IOException, InterruptedException {
+    private void download(ALEntry entry, Path dir) throws IOException, InterruptedException, PrepaDLException {
         List<NamedUrl> urls = entry.urls();
 
         if (urls.size() > 1) {
-            Path subDir = dir.resolve(entry.name());
+            String firstName = urls.get(0).text();
+
+            Path subDir;
+            if (firstName.equals(entry.name())) {
+                subDir = dir.resolve(entry.name());;
+            } else {
+                subDir = dir.resolve(entry.name() + " - " + firstName);
+            }
 
             for (NamedUrl url : urls) {
                 download(url.url(), subDir, null);
@@ -97,32 +97,39 @@ public class DownloadAL extends DownloadCommand {
         }
     }
 
-    private void download(String url, Path dirOut, String overrideName) throws IOException, InterruptedException {
+    private void download(String url, Path dirOut, String trail) throws IOException, InterruptedException, PrepaDLException {
+        int dot = url.lastIndexOf('.');
+        int slash = url.lastIndexOf('/');
+
+        if (dot < slash) { // found a webpage
+            return;
+        }
+
+        String name = URLDecoder.decode(url.substring(slash + 1, dot), StandardCharsets.UTF_8);
+        String extension = url.substring(dot + 1);
+
         if (!Files.exists(dirOut)) {
             Files.createDirectories(dirOut);
         }
 
         Path out;
-
-        if (overrideName != null) {
-            out = dirOut.resolve(overrideName);
+        if (trail == null || trail.isBlank() || trail.equalsIgnoreCase(name)) {
+            out = dirOut.resolve("%s.%s".formatted(name, extension));
         } else {
-            int i = url.lastIndexOf('/');
-            String name = url.substring(i + 1);
-
-            out = dirOut.resolve(name);
+            out = dirOut.resolve("%s - %s.%s".formatted(name, trail, extension));
         }
 
-        System.out.println("Downloading: " + url + " - " + out);
+        HttpRequest headRequest = HttpRequest.newBuilder(URI.create(url))
+                .HEAD()
+                .build();
 
-        HttpRequest req = HttpRequest.newBuilder(URI.create(url)).build();
+        HttpResponse<Void> headRep = Utils.CLIENT.send(headRequest, HttpResponse.BodyHandlers.discarding());
+        long size = headRep.headers().firstValueAsLong("Content-Length").orElse(-1);
 
-        HttpResponse<InputStream> rep = Utils.CLIENT.send(req, HttpResponse.BodyHandlers.ofInputStream());
-        InputStream is = rep.body();
+        Instant instant = headRep.headers().firstValue("Last-Modified")
+                .map(s -> DateTimeFormatter.RFC_1123_DATE_TIME.parse(s, Instant::from))
+                .orElse(null);
 
-        OutputStream os = new BufferedOutputStream(Files.newOutputStream(out));
-        is.transferTo(os);
-        os.close();
-        is.close();
+        download(url, instant, size, out, null);
     }
 }

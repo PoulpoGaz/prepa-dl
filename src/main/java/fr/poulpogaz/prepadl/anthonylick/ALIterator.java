@@ -18,9 +18,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class ALIterator {
 
@@ -29,7 +29,9 @@ public class ALIterator {
     private final Iterator<Element> iterator;
 
     private String currentGroup = null;
-    private Iterator<Element> inner;
+    private Iterator<Element> groupIterator;
+
+    private ALEntry next;
 
     public ALIterator(ALSession session, String url) throws PrepaDLException, IOException, InterruptedException {
         if (!url.startsWith("https://anthonylick.com/")) {
@@ -49,71 +51,99 @@ public class ALIterator {
         iterator = doc.select(".entry-content > *").iterator();
     }
 
-    public boolean hasNext() {
-        return iterator.hasNext() || (inner != null && inner.hasNext());
+    private void nextGroup() {
+        groupIterator = null;
+        currentGroup = null;
+
+        while (iterator.hasNext() && groupIterator == null) {
+            Element e = iterator.next();
+
+            if (e.is("h4")) {
+                currentGroup = removeTrail(e.text());
+            } else if (e.is("ul")) {
+                groupIterator = e.children().iterator();
+            }
+        }
     }
 
-    public ALEntry next() throws ALException {
-        nextGroup();
+    private String getSubCategoryName(Element li) {
+        StringBuilder name = new StringBuilder();
 
-        Element e = inner.next();
+        for (int i = 0; i < li.childNodeSize(); i++) {
+            Node node = li.childNode(i);
 
-        String name = getName(e);
+            String toAppend = null;
+            if (node instanceof TextNode text) {
+                toAppend = text.text();
+            } else if (node instanceof Element element && element.is("a")) {
+                toAppend = element.text();
+            }
 
-        List<NamedUrl> url = new ArrayList<>();
-        for (Element a : e.select("a")) {
-            url.add(new NamedUrl(a.attr("href"), a.text()));
-        }
+            if (toAppend != null && !toAppend.isBlank()) {
+                String withoutTrail = removeTrail(toAppend);
 
-        ALEntry entry = new ALEntry(currentGroup, name, Collections.unmodifiableList(url));
-
-        if (!inner.hasNext()) {
-            inner = null;
-            currentGroup = null;
-        }
-
-        return entry;
-    }
-
-    private void nextGroup() throws ALException {
-        if (currentGroup == null) {
-            Element e;
-            do {
-                e = iterator.next();
-
-                if (e.is("h4")) {
-                    currentGroup = e.text();
+                if (withoutTrail.startsWith(" (")) {
+                    break;
                 } else {
-                    throw new ALException("Not h4");
+                    name.append(withoutTrail);
+
+                    if (withoutTrail.length() < toAppend.length()) {
+                        break;
+                    }
                 }
-
-                e = iterator.next();
-
-            } while (!e.is("ul"));
-
-            inner = e.select("ul > li").iterator();
+            }
         }
+
+        if (name.isEmpty()) {
+            return null;
+        }
+
+        return name.toString();
     }
 
-    private String getName(Element element) {
-        List<Node> nodes = element.childNodes();
+    private void fetchNext() {
+        next = null;
 
-        for (Node node : nodes) {
-            String text;
-
-            if (node instanceof TextNode t) {
-                text = t.text();
-            } else if (node instanceof Element e) {
-                text = e.text();
-            } else {
+        while ((iterator.hasNext() || groupIterator.hasNext()) && next == null) {
+            if (groupIterator == null || !groupIterator.hasNext()) {
+                nextGroup();
                 continue;
             }
 
-            if (!text.isBlank()) {
-                return text;
+            Element next = groupIterator.next();
+
+            if (next.is("li")) {
+                String subName = getSubCategoryName(next);
+
+                List<NamedUrl> urls = new ArrayList<>();
+                for (Element e : next.select("a")) {
+                    urls.add(new NamedUrl(e.attr("href"), removeTrail(e.text())));
+                }
+
+                this.next = new ALEntry(currentGroup, subName, urls);
             }
         }
+    }
 
-        return null;
+    public boolean hasNext() {
+        if (next == null) {
+            fetchNext();
+        }
+
+        return next != null;
+    }
+
+    public ALEntry next() throws ALException {
+        if (!hasNext()) {
+            throw new NoSuchElementException();
+        }
+
+        ALEntry curr = next;
+        next = null;
+        return curr;
+    }
+
+    private String removeTrail(String str) {
+        return str.replaceFirst("[ :(]*$", "");
     }
 }

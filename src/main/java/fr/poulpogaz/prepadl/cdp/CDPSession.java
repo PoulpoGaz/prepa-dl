@@ -2,10 +2,8 @@ package fr.poulpogaz.prepadl.cdp;
 
 import fr.poulpogaz.prepadl.Session;
 
-import java.io.IOException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Path;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

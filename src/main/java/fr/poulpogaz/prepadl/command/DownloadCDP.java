@@ -1,6 +1,6 @@
 package fr.poulpogaz.prepadl.command;
 
-import fr.poulpogaz.prepadl.cdp.CDPSession;
+import fr.poulpogaz.prepadl.PrepaDLException;
 import fr.poulpogaz.prepadl.cdp.*;
 import fr.poulpogaz.prepadl.utils.Input;
 import fr.poulpogaz.prepadl.utils.Pair;
@@ -34,7 +34,7 @@ public class DownloadCDP extends DownloadCommand {
     }
 
     @Override
-    public void downloadImpl() throws CDPException, IOException {
+    public void downloadImpl() throws PrepaDLException, IOException, InterruptedException {
         CDPSession session = allSession.getCDPSession();
         if (session == null) {
             Pair<String, String> pair = Input.readInput();
@@ -58,7 +58,7 @@ public class DownloadCDP extends DownloadCommand {
         }
     }
 
-    private void walk(CDPSession session, CDPEntry entry, Path position) throws CDPException, IOException {
+    private void walk(CDPSession session, CDPEntry entry, Path position) throws PrepaDLException, IOException, InterruptedException {
         Path descendantPos = download(session, entry, position);
 
         if (entry.isFolder()) {
@@ -70,7 +70,7 @@ public class DownloadCDP extends DownloadCommand {
         }
     }
 
-    private Path download(CDPSession session, CDPEntry entry, Path position) throws IOException, CDPException {
+    private Path download(CDPSession session, CDPEntry entry, Path position) throws IOException, PrepaDLException, InterruptedException {
         if (entry.isFolder()) {
             Path out = position.resolve(entry.name());
 
@@ -85,7 +85,9 @@ public class DownloadCDP extends DownloadCommand {
             String fileName = entry.name() + '.' + file.fileType();
             Path out = position.resolve(fileName);
 
-            if (replace(out, file) || !intelligentCopy) {
+            download(null, file.lastModified().toInstant(), -1, out, (s) -> API.getInputStream(file, session));
+
+            /*if (!intelligentCopy || replace(out, file)) {
                 System.out.println("Downloading " + fileName);
 
                 InputStream is = API.getInputStream(file, session);
@@ -98,7 +100,7 @@ public class DownloadCDP extends DownloadCommand {
                 Files.setLastModifiedTime(out, ft);
             } else {
                 System.out.println(fileName + " is up to date");
-            }
+            }*/
 
             return null;
         }

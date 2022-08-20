@@ -5,33 +5,16 @@ import fr.poulpogaz.prepadl.cdp.*;
 import fr.poulpogaz.prepadl.utils.Input;
 import fr.poulpogaz.prepadl.utils.Pair;
 import fr.poulpogaz.prepadl.utils.Utils;
+import picocli.CommandLine;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.List;
 
+@CommandLine.Command(name = "dl", description = "Download all files from cahier-de-prepa", mixinStandardHelpOptions = true)
 public class DownloadCDP extends DownloadCommand {
-
-    @Override
-    public String getName() {
-        return "dl";
-    }
-
-    @Override
-    public String getUsage() {
-        return "Download all files from cahier-de-prepa";
-    }
-
-    @Override
-    public boolean addHelp() {
-        return false;
-    }
 
     @Override
     public void downloadImpl() throws PrepaDLException, IOException, InterruptedException {

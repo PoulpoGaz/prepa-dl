@@ -1,12 +1,10 @@
 package fr.poulpogaz.prepadl.command;
 
-import fr.poulpogaz.args.api.Option;
-import fr.poulpogaz.args.api.VaArgs;
-import fr.poulpogaz.args.api.VoidCommand;
 import fr.poulpogaz.prepadl.AllSession;
 import fr.poulpogaz.prepadl.OutPathConverter;
 import fr.poulpogaz.prepadl.PrepaDLException;
 import fr.poulpogaz.prepadl.utils.Utils;
+import picocli.CommandLine;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -20,20 +18,20 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 
-public abstract class DownloadCommand implements VoidCommand  {
+public abstract class DownloadCommand implements Runnable  {
 
     protected AllSession allSession = AllSession.INSTANCE;
 
-    @Option(names = {"-output", "o"}, argName = "output", hasArgument = true, converter = OutPathConverter.class)
+    @CommandLine.Option(names = {"--output", "-o"}, paramLabel = "output", converter = OutPathConverter.class)
     protected Path out;
 
-    @Option(names = {"-permanent-connection", "p"}, defaultValue = "false")
+    @CommandLine.Option(names = {"--permanent-connection", "-p"})
     protected boolean permanentConnection;
 
-    @Option(names = {"-intelligent-copy", "i"}, defaultValue = "false")
+    @CommandLine.Option(names = {"--intelligent-copy", "-i"})
     protected boolean intelligentCopy;
 
-    @VaArgs
+    @CommandLine.Parameters
     protected String[] skip;
 
     @Override

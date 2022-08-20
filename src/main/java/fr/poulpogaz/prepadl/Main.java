@@ -1,16 +1,19 @@
 package fr.poulpogaz.prepadl;
 
-import fr.poulpogaz.args.CommandLine;
-import fr.poulpogaz.args.CommandLineBuilder;
-import fr.poulpogaz.args.utils.CommandLineException;
 import fr.poulpogaz.prepadl.command.DownloadAL;
 import fr.poulpogaz.prepadl.command.DownloadCDP;
 import fr.poulpogaz.prepadl.command.Logout;
-import fr.poulpogaz.prepadl.utils.Version;
+import picocli.CommandLine;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
+// dl -f -p -i -o cahier-de-prepa "Sciences de l'ingénieur" "Informatique pour tous"
+@CommandLine.Command(name = "prepa-dl",
+        mixinStandardHelpOptions = true,
+        version = {"prepa-dl: 1.1-dev",
+                "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
+                "OS: ${os.name} ${os.version} ${os.arch}"})
 public class Main  {
 
     public static void main(String[] args) {
@@ -19,18 +22,15 @@ public class Main  {
         try {
             AllSession.INSTANCE.load(dir);
 
-            CommandLine cli = new CommandLineBuilder()
-                    .addDefaultConverters()
-                    .addCommand(new Version())
-                    .addCommand(new Logout())
-                    .addCommand(new DownloadCDP())
-                    .addCommand(new DownloadAL())
-                    .build();
+            CommandLine cli = new CommandLine(new Main());
+            cli.addSubcommand(new DownloadAL());
+            cli.addSubcommand(new DownloadCDP());
+            cli.addSubcommand(new Logout());
 
             cli.execute(args);
 
             AllSession.INSTANCE.save(dir);
-        } catch (CommandLineException | IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

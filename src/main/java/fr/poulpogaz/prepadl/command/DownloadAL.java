@@ -6,6 +6,7 @@ import fr.poulpogaz.prepadl.anthonylick.ALIterator;
 import fr.poulpogaz.prepadl.anthonylick.ALSession;
 import fr.poulpogaz.prepadl.utils.NamedUrl;
 import fr.poulpogaz.prepadl.utils.Utils;
+import picocli.CommandLine;
 
 import java.io.IOException;
 import java.net.URI;
@@ -19,22 +20,8 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+@CommandLine.Command(name = "dl-al", description = "Download all files from https://anthonylick.com/", mixinStandardHelpOptions = true)
 public class DownloadAL extends DownloadCommand {
-
-    @Override
-    public String getName() {
-        return "dl-info";
-    }
-
-    @Override
-    public String getUsage() {
-        return "Download all files from https://anthonylick.com/";
-    }
-
-    @Override
-    public boolean addHelp() {
-        return false;
-    }
 
     @Override
     public void downloadImpl() throws IOException, PrepaDLException, InterruptedException {

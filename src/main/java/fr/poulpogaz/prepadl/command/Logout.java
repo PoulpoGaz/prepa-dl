@@ -1,28 +1,14 @@
 package fr.poulpogaz.prepadl.command;
 
-import fr.poulpogaz.args.api.VoidCommand;
 import fr.poulpogaz.prepadl.AllSession;
 import fr.poulpogaz.prepadl.cdp.API;
 import fr.poulpogaz.prepadl.cdp.CDPException;
+import picocli.CommandLine;
 
 import java.io.IOException;
 
-public class Logout implements VoidCommand {
-
-    @Override
-    public String getName() {
-        return "logout";
-    }
-
-    @Override
-    public String getUsage() {
-        return "Logout from all platforms";
-    }
-
-    @Override
-    public boolean addHelp() {
-        return true;
-    }
+@CommandLine.Command(name = "logout", description = "Logout from all platforms")
+public class Logout implements Runnable {
 
     @Override
     public void run() {

@@ -34,7 +34,7 @@ public class Input {
         return reader;
     }
 
-    private interface Reader {
+    public interface Reader {
 
         String readString(String fmt, Object... args);
 

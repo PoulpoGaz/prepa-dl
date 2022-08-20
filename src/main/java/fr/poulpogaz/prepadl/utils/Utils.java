@@ -18,7 +18,7 @@ import java.util.zip.GZIPInputStream;
 public class Utils {
 
     public static final String USER_AGENT =
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36 OPR/85.0.4341.47";
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.81 Safari/537.36 OPR/90.0.4480.48";
 
     public static final CookieManager COOKIE_MANAGER = new CookieManager();
     public static final CookieStore COOKIE_STORE = COOKIE_MANAGER.getCookieStore();

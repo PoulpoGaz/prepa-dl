@@ -1,16 +1,48 @@
 package fr.poulpogaz.prepadl.cdp;
 
 import fr.poulpogaz.prepadl.Session;
+import fr.poulpogaz.prepadl.utils.Utils;
 
+import java.net.HttpCookie;
+import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.List;
 
 public class CDPSession implements Session {
 
-    private static final Pattern CDP_REGEX =
-            Pattern.compile("^(CDP_SESSION=.*); path=/(.*)/; domain=cahier-de-prepa.fr; secure$");
+    public static CDPSession createFromCookieStore() throws CDPException {
+        List<HttpCookie> cookies = Utils.COOKIE_STORE.get(uri);
+
+        String cpge = null;
+        String cdpSession = null;
+        String cdpPerm = null;
+        for (HttpCookie cookie : cookies) {
+            if (cookie.hasExpired()) {
+                continue;
+            }
+
+            if (cookie.getName().equalsIgnoreCase("CDP_SESSION")) {
+                cpge = cookie.getPath();
+                cpge = cpge.substring(1, cpge.length() - 1); // remove first and last /
+
+                cdpSession = cookie.getValue();
+            } else if (cookie.getName().equalsIgnoreCase("CDP_SESSION_PERM")) {
+                cdpPerm = cookie.getValue();
+            }
+        }
+
+        if (cpge == null) {
+            throw new CDPException("Failed to get cpge");
+        }
+        if (cdpSession == null) {
+            throw new CDPException("Failed to get CDP_SESSION");
+        }
+
+        return new CDPSession(cpge, cdpSession, cdpPerm);
+    }
+
+    private static final URI uri = URI.create("https://cahier-de-prepa.fr/");
 
 
     private final String cpge;
@@ -24,24 +56,26 @@ public class CDPSession implements Session {
     }
 
     public void updateSession(HttpResponse<?> response) {
-        for (String h : response.headers().allValues("Set-Cookie")) {
-            Matcher m = CDP_REGEX.matcher(h);
+        List<HttpCookie> cookies = Utils.COOKIE_STORE.get(uri);
 
-            if (m.find() && !m.group(2).equals("connexion")) {
-                cdpSession = m.group(1);
-            } else if (h.startsWith("CDP_SESSION_PERM")) {
-                int end = h.indexOf(';');
-                cdpPerm = h.substring(0, end);
+        for (HttpCookie cookie : cookies) {
+            if (cookie.hasExpired()) {
+                continue;
+            }
+            if (cookie.getName().equalsIgnoreCase("CDP_SESSION")) {
+                cdpSession = cookie.getName() + "=" + cookie.getValue();
+            } else if (cookie.getName().equalsIgnoreCase("CDP_SESSION_PERM")) {
+                cdpPerm = cookie.getName() + "=" + cookie.getValue();
             }
         }
     }
 
     @Override
     public HttpRequest.Builder setHeader(HttpRequest.Builder request) {
-        request.header("Cookie", cdpSession);
+        request.header("Cookie", "CDP_SESSION=" + cdpSession);
 
         if (cdpPerm != null) {
-            request.header("Cookie", cdpPerm);
+            request.header("Cookie", "CDP_SESSION_PERM=" + cdpPerm);
         }
 
         return request;

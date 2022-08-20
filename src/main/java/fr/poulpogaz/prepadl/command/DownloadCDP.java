@@ -10,25 +10,28 @@ import picocli.CommandLine;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.List;
 
 @CommandLine.Command(name = "dl", description = "Download all files from cahier-de-prepa", mixinStandardHelpOptions = true)
 public class DownloadCDP extends DownloadCommand {
 
+    @CommandLine.ArgGroup(exclusive = false)
+    private MyCDPSession custom;
+
     @Override
     public void downloadImpl() throws PrepaDLException, IOException, InterruptedException {
-        CDPSession session = allSession.getCDPSession();
+        CDPSession session = custom == null ? allSession.getCDPSession() : custom.toCDPSession();
         if (session == null) {
             Pair<String, String> pair = Input.readInput();
 
             session = API.login(pair.left(), pair.right(), permanentConnection);
+            allSession.setCDPSession(session);
         }
 
         List<CDPRootFolder> folders = API.getRootFolders(session);
 
         for (CDPRootFolder folder : folders) {
-            if (Utils.contains(skip, folder.name())) {
+            if (skip != null && Utils.contains(skip, folder.name())) {
                 continue;
             }
 
@@ -36,7 +39,10 @@ public class DownloadCDP extends DownloadCommand {
         }
 
         if (!permanentConnection) {
-            API.logout(session);
+            if (allSession.getCDPSession() != null) {
+                API.logout(allSession.getCDPSession());
+            }
+
             allSession.setCDPSession(null);
         }
     }
@@ -70,33 +76,22 @@ public class DownloadCDP extends DownloadCommand {
 
             download(null, file.lastModified().toInstant(), -1, out, (s) -> API.getInputStream(file, session));
 
-            /*if (!intelligentCopy || replace(out, file)) {
-                System.out.println("Downloading " + fileName);
-
-                InputStream is = API.getInputStream(file, session);
-                OutputStream os = new BufferedOutputStream(Files.newOutputStream(out));
-                is.transferTo(os);
-                os.close();
-                is.close();
-
-                FileTime ft = FileTime.from(file.lastModified().toInstant());
-                Files.setLastModifiedTime(out, ft);
-            } else {
-                System.out.println(fileName + " is up to date");
-            }*/
-
             return null;
         }
     }
 
-    private boolean replace(Path out, CDPFile file) throws IOException {
-        if (Files.exists(out)) {
-            Instant fileInstant = Files.getLastModifiedTime(out).toInstant();
-            Instant cdpInstant = file.lastModified().toInstant();
+    static class MyCDPSession {
+        @CommandLine.Option(names = "--cpge")
+        private String cpge;
 
-            return fileInstant.compareTo(cdpInstant) != 0;
+        @CommandLine.Option(names = "--cdp-session")
+        private String cdpSession;
+
+        @CommandLine.Option(names = "--cdp-session-perm")
+        private String cdpSessionPerm;
+
+        public CDPSession toCDPSession() {
+            return new CDPSession(cpge, cdpSession, cdpSessionPerm);
         }
-
-        return true;
     }
 }

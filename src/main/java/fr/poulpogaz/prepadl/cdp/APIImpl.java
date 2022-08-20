@@ -17,7 +17,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static fr.poulpogaz.prepadl.utils.Utils.CLIENT;
@@ -106,30 +105,7 @@ public class APIImpl implements IAPI {
             throw new CDPException(message);
         }
 
-        // get CDP_SESSION
-        String cdpSession = null;
-        String cdpPerm = null;
-        String cpge = null;
-        for (String h : response.headers().allValues("Set-Cookie")) {
-            Matcher m = CDP_REGEX.matcher(h);
-
-            if (m.find() && !m.group(2).equals("connexion")) {
-                cdpSession = m.group(1);
-                cpge = m.group(2);
-            } else if (h.startsWith("CDP_SESSION_PERM")) {
-                int end = h.indexOf(';');
-                cdpPerm = h.substring(0, end);
-            }
-        }
-
-        if (cpge == null) {
-            throw new CDPException("Failed to get cpge");
-        }
-        if (cdpSession == null) {
-            throw new CDPException("Failed to get CDP_SESSION");
-        }
-
-        return new CDPSession(cpge, cdpSession, cdpPerm);
+        return CDPSession.createFromCookieStore();
     }
 
     protected List<CDPRootFolder> getRootFoldersImpl(CDPSession session) throws IOException, InterruptedException {
@@ -184,7 +160,7 @@ public class APIImpl implements IAPI {
     protected InputStream getInputStreamImpl(CDPFile file, CDPSession session) throws IOException, InterruptedException {
         URI uri = uri("/%s/%s", session.getCPGE(), file.request());
 
-        HttpRequest request = setHeader(HttpRequest.newBuilder(uri), session)
+        HttpRequest request = session.setHeader(HttpRequest.newBuilder(uri))
                 .setHeader("Accept-Encoding", "gzip, deflate, br")
                 .build();
 
@@ -222,7 +198,7 @@ public class APIImpl implements IAPI {
 
     private Document getDocument(URI uri, CDPSession session) throws IOException, InterruptedException {
         HttpRequest.Builder builder = HttpRequest.newBuilder(uri);
-        setHeader(builder, session)
+        session.setHeader(builder)
                 .setHeader("Accept-Encoding", "gzip, deflate, br");
 
         HttpRequest request = builder.build();
@@ -231,15 +207,5 @@ public class APIImpl implements IAPI {
         session.updateSession(response);
 
         return Jsoup.parse(response.body(), "UTF-8", ROOT);
-    }
-
-    private HttpRequest.Builder setHeader(HttpRequest.Builder builder, CDPSession session) {
-        builder.header("Cookie", session.getCDPSession());
-
-        if (session.getCDPPerm() != null) {
-            builder.header("Cookie", session.getCDPPerm());
-        }
-
-        return builder;
     }
 }

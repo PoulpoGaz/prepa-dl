@@ -14,9 +14,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -45,8 +42,6 @@ public class ALIterator {
                 Utils.CLIENT.send(builder.build(), HttpResponse.BodyHandlers.ofInputStream());
 
         Document doc = Jsoup.parse(response.body(), "UTF-8", ROOT);
-
-        Files.writeString(Path.of("out.html"), doc.html(), StandardOpenOption.CREATE);
 
         iterator = doc.select(".entry-content > *").iterator();
     }

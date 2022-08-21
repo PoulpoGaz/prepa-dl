@@ -6,16 +6,18 @@ import fr.poulpogaz.prepadl.utils.Input;
 import fr.poulpogaz.prepadl.utils.Pair;
 import fr.poulpogaz.prepadl.utils.Utils;
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Command;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-@CommandLine.Command(name = "dl", description = "Download all files from cahier-de-prepa", mixinStandardHelpOptions = true)
+@Command(name = "dl", description = "Download all files from cahier-de-prepa", mixinStandardHelpOptions = true)
 public class DownloadCDP extends DownloadCommand {
 
-    @CommandLine.ArgGroup(exclusive = false)
+    @ArgGroup(exclusive = false)
     private MyCDPSession custom;
 
     @Override
@@ -25,8 +27,8 @@ public class DownloadCDP extends DownloadCommand {
             Pair<String, String> pair = Input.readInput();
 
             session = API.login(pair.left(), pair.right(), permanentConnection);
-            allSession.setCDPSession(session);
         }
+        allSession.setCDPSession(session);
 
         List<CDPRootFolder> folders = API.getRootFolders(session);
 

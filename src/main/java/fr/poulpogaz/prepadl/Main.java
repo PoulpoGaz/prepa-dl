@@ -8,7 +8,6 @@ import picocli.CommandLine;
 import java.io.IOException;
 import java.nio.file.Path;
 
-// dl -f -p -i -o cahier-de-prepa "Sciences de l'ingénieur" "Informatique pour tous"
 @CommandLine.Command(name = "prepa-dl",
         mixinStandardHelpOptions = true,
         version = {"prepa-dl: 1.1-dev",

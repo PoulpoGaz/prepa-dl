@@ -4,7 +4,8 @@ import fr.poulpogaz.prepadl.AllSession;
 import fr.poulpogaz.prepadl.OutPathConverter;
 import fr.poulpogaz.prepadl.PrepaDLException;
 import fr.poulpogaz.prepadl.utils.Utils;
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -22,16 +23,16 @@ public abstract class DownloadCommand implements Runnable  {
 
     protected AllSession allSession = AllSession.INSTANCE;
 
-    @CommandLine.Option(names = {"--output", "-o"}, paramLabel = "output", converter = OutPathConverter.class)
+    @Option(names = {"--output", "-o"}, paramLabel = "output", converter = OutPathConverter.class)
     protected Path out;
 
-    @CommandLine.Option(names = {"--permanent-connection", "-p"})
+    @Option(names = {"--permanent-connection", "-p"})
     protected boolean permanentConnection;
 
-    @CommandLine.Option(names = {"--intelligent-copy", "-i"})
+    @Option(names = {"--intelligent-copy", "-i"})
     protected boolean intelligentCopy;
 
-    @CommandLine.Parameters
+    @Parameters
     protected String[] skip;
 
     @Override

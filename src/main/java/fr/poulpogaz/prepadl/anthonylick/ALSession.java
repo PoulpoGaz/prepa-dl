@@ -18,7 +18,7 @@ public class ALSession implements Session {
     private static final String postDate = "post_password=%s&Submit=Enter";
 
     private final String password;
-    private HttpCookie cookie;
+    private transient HttpCookie cookie;
 
     public ALSession(String password) {
         this.password = password;
@@ -48,7 +48,6 @@ public class ALSession implements Session {
             List<HttpCookie> cookies = store.get(login);
 
             for (HttpCookie c : cookies) {
-                System.out.println(c);
                 if (c.getName().startsWith("wp-postpass")) {
                     cookie = c;
 
@@ -74,6 +73,20 @@ public class ALSession implements Session {
 
     @Override
     public boolean isValid() {
-        return cookie != null && !cookie.hasExpired();
+        if (cookie == null || cookie.hasExpired()) {
+            if (password == null) {
+                return false;
+            }
+
+            try {
+                login();
+            } catch (IOException | InterruptedException e) {
+                return false;
+            }
+
+            return cookie != null && !cookie.hasExpired();
+        }
+
+        return true;
     }
 }

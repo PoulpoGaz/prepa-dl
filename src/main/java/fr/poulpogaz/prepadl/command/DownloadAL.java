@@ -4,9 +4,10 @@ import fr.poulpogaz.prepadl.PrepaDLException;
 import fr.poulpogaz.prepadl.anthonylick.ALEntry;
 import fr.poulpogaz.prepadl.anthonylick.ALIterator;
 import fr.poulpogaz.prepadl.anthonylick.ALSession;
+import fr.poulpogaz.prepadl.utils.Input;
 import fr.poulpogaz.prepadl.utils.NamedUrl;
 import fr.poulpogaz.prepadl.utils.Utils;
-import picocli.CommandLine;
+import picocli.CommandLine.Command;
 
 import java.io.IOException;
 import java.net.URI;
@@ -20,12 +21,14 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-@CommandLine.Command(name = "dl-al", description = "Download all files from https://anthonylick.com/", mixinStandardHelpOptions = true)
+@Command(name = "dl-al", description = "Download all files from https://anthonylick.com/", mixinStandardHelpOptions = true)
 public class DownloadAL extends DownloadCommand {
 
     @Override
     public void downloadImpl() throws IOException, PrepaDLException, InterruptedException {
         ALSession session = login();
+        allSession.setALSession(session);
+
         ALIterator iterator = new ALIterator(session, "https://anthonylick.com/mp2i/");
 
         ALEntry last = null;
@@ -45,13 +48,17 @@ public class DownloadAL extends DownloadCommand {
 
             last = next;
         }
+
+        if (!permanentConnection) {
+            allSession.setALSession(null);
+        }
     }
 
     private ALSession login() throws IOException, InterruptedException {
         ALSession session = allSession.getALSession();
 
         if (session == null || !session.isValid()) {
-            String password = "janson2sailly"; //Input.readPassword();
+            String password = Input.readPassword();
 
             session = new ALSession(password);
             session.login();

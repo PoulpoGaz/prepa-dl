@@ -3,11 +3,11 @@ package fr.poulpogaz.prepadl.command;
 import fr.poulpogaz.prepadl.AllSession;
 import fr.poulpogaz.prepadl.cdp.API;
 import fr.poulpogaz.prepadl.cdp.CDPException;
-import picocli.CommandLine;
+import picocli.CommandLine.Command;
 
 import java.io.IOException;
 
-@CommandLine.Command(name = "logout", description = "Logout from all platforms")
+@Command(name = "logout", description = "Logout from all platforms")
 public class Logout implements Runnable {
 
     @Override

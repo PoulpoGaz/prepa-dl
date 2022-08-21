@@ -10,9 +10,12 @@ import java.nio.file.Path;
 
 @CommandLine.Command(name = "prepa-dl",
         mixinStandardHelpOptions = true,
-        version = {"prepa-dl: 1.1-dev",
+        version = {"prepa-dl: 1.1 - @|bold The Beginning|@",
                 "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
-                "OS: ${os.name} ${os.version} ${os.arch}"})
+                "OS: ${os.name} ${os.version} ${os.arch}"},
+        footer = {
+                "By PoulpoGaz",
+                "https://github.com/PoulpoGaz/prepa-dl"})
 public class Main  {
 
     public static void main(String[] args) {

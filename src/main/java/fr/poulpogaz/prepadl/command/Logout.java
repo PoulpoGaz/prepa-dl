@@ -7,7 +7,7 @@ import picocli.CommandLine.Command;
 
 import java.io.IOException;
 
-@Command(name = "logout", description = "Logout from all platforms")
+@Command(name = "logout", description = "Logout from all platforms", mixinStandardHelpOptions = true)
 public class Logout implements Runnable {
 
     @Override

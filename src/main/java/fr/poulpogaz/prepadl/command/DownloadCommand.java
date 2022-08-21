@@ -56,7 +56,7 @@ public abstract class DownloadCommand implements Runnable  {
                             InputStreamFactory inputStreamFactory)
             throws IOException, InterruptedException, PrepaDLException {
         if (!intelligentCopy || canReplace(dest, lastModifiedTime, size)) {
-            System.out.println("Downloading " + dest.getFileName());
+            System.out.println("Downloading " + url + " to " + dest);
 
             InputStream is;
             if (inputStreamFactory != null) {
@@ -77,7 +77,7 @@ public abstract class DownloadCommand implements Runnable  {
                 Files.setLastModifiedTime(dest, FileTime.from(lastModifiedTime));
             }
         } else {
-            System.out.println(dest.getFileName() + " is up to date");
+            System.out.println(dest + " is up to date");
         }
     }
 

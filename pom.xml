@@ -6,7 +6,7 @@
 
     <groupId>fr.poulpogaz</groupId>
     <artifactId>prepa-dl</artifactId>
-    <version>1.1-dev</version>
+    <version>1.1 - The Beginning</version>
 
     <properties>
         <maven.compiler.source>18</maven.compiler.source>

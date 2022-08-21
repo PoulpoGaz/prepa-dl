@@ -76,7 +76,7 @@ public class DownloadCDP extends DownloadCommand {
             String fileName = entry.name() + '.' + file.fileType();
             Path out = position.resolve(fileName);
 
-            download(null, file.lastModified().toInstant(), -1, out, (s) -> API.getInputStream(file, session));
+            download(fileName, file.lastModified().toInstant(), -1, out, (s) -> API.getInputStream(file, session));
 
             return null;
         }
